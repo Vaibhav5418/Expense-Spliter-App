@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Requested Theme: Green-600 / Green-500 / Green-50 / Gold */
+  --background: #f0fdf4;
+  /* Green-50 */
+  --foreground: #052e16;
+  /* Green-950 */
+
+  --card: #ffffff;
+  --card-foreground: #052e16;
+
+  --primary: #16a34a;
+  /* Green-600 */
+  --primary-foreground: #ffffff;
+
+  --secondary: #22c55e;
+  /* Green-500 */
+  --secondary-foreground: #ffffff;
+
+  --accent: #eab308;
+  /* Gold (Amber-500) */
+  --accent-foreground: #ffffff;
+
+  --danger: #ef4444;
+  /* Red-500 */
+  --warning: #f59e0b;
+  /* Amber-500 */
+
+  --muted: #dcfce7;
+  /* Green-100 */
+  --muted-foreground: #14532d;
+  /* Green-900 */
+
+  --border: #bbf7d0;
+  /* Green-200 */
+  --radius: 1rem;
+}
+
+body {
+  @apply bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500 selection:bg-emerald-500/30 selection:text-emerald-500 antialiased;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.01em;
+  background-attachment: fixed;
+}
+
+/* Typography Hierarchy */
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: 'Inter', sans-serif;
+  @apply font-semibold tracking-tight;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Premium Card Utilities */
+.enterprise-card {
+  @apply bg-[var(--card)] text-[var(--card-foreground)] border border-[var(--border)] rounded-2xl shadow-sm transition-all duration-300 relative overflow-hidden;
+}
+
+.enterprise-card:hover {
+  @apply shadow-xl -translate-y-0.5;
+}
+
+/* Glassmorphism Classes */
+.glass {
+  @apply bg-white/60 backdrop-blur-xl border border-white/40 shadow-lg shadow-black/5;
+}
+
+.glass-card {
+  @apply glass rounded-2xl transition-all duration-500;
+}
+
+.glass-card:hover {
+  @apply shadow-2xl;
+}
+
+/* Navigation & Interactive Elements */
+.nav-item-active {
+  @apply bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/30;
+}
+
+/* Button System */
+.btn-primary {
+  @apply bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition-all px-5 py-2.5 rounded-xl font-bold font-display tracking-wide flex items-center justify-center gap-2;
+}
+
+.btn-secondary {
+  @apply border border-indigo-200 text-indigo-600 hover:bg-indigo-50 active:scale-95 transition-all px-5 py-2.5 rounded-xl font-bold font-display tracking-wide flex items-center justify-center gap-2;
+}
+
+.btn-ghost {
+  @apply hover:bg-slate-100 text-slate-600 active:scale-95 transition-all px-4 py-2 rounded-xl font-medium flex items-center justify-center gap-2;
+}
+
+.btn-danger {
+  @apply bg-gradient-to-r from-rose-600 to-rose-50 hover:from-rose-700 hover:to-rose-600 text-white shadow-lg shadow-rose-500/20 active:scale-95 transition-all px-5 py-2.5 rounded-xl font-bold font-display tracking-wide flex items-center justify-center gap-2;
+}
+
+.input-field {
+  @apply w-full px-4 py-3 bg-slate-100/50 border border-transparent rounded-xl focus:border-emerald-500 focus:bg-[var(--card)] focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none font-medium placeholder:text-slate-400;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-300;
+}
+
+/* Animation Utilities */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 15px -3px rgba(16, 185, 129, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 0 25px -3px rgba(16, 185, 129, 0.3);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
