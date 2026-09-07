@@ -73,7 +73,7 @@ jobs:
             cd ~/app
 
             # 2. Write docker-compose.yml directly
-            cat << 'EOF' > docker-compose.yml
+            cat << 'COMPOSE_EOF' > docker-compose.yml
             version: '3.8'
 
             services:
@@ -106,26 +106,53 @@ jobs:
             networks:
               app-network:
                 driver: bridge
-            EOF
+            COMPOSE_EOF
 
             # 3. Write .env file
-            cat << EOF > .env
+            cat << 'ENV_EOF' > .env
             DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
             MONGO_URI=${{ secrets.MONGO_URI }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
             FRONTEND_URL=http://${{ secrets.EC2_HOST }}
             PORT=5000
-            EOF
+            ENV_EOF
 
-            # 4. Authenticate Docker with Docker Hub on EC2
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            # 4. Auto-detect Docker and Docker Compose (support sudo / standalone)
+            if docker ps >/dev/null 2>&1; then
+                DOCKER="docker"
+            elif sudo docker ps >/dev/null 2>&1; then
+                DOCKER="sudo docker"
+            else
+                echo "❌ Error: Docker daemon is not running or accessible!"
+                exit 1
+            fi
 
-            # 5. Pull updated images & restart containers
-            docker compose pull
-            docker compose up -d --remove-orphans --force-recreate
+            if docker compose version >/dev/null 2>&1; then
+                COMPOSE="docker compose"
+            elif docker-compose --version >/dev/null 2>&1; then
+                COMPOSE="docker-compose"
+            elif sudo docker compose version >/dev/null 2>&1; then
+                COMPOSE="sudo docker compose"
+            elif sudo docker-compose --version >/dev/null 2>&1; then
+                COMPOSE="sudo docker-compose"
+            else
+                echo "❌ Error: Docker Compose is not installed on EC2!"
+                exit 1
+            fi
 
-            # 6. Cleanup obsolete dangling images
-            docker image prune -af --filter "until=48h"
+            # 5. Authenticate Docker with Docker Hub on EC2
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | $DOCKER login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            # 6. Pull updated images & restart containers
+            $COMPOSE pull
+            $COMPOSE up -d --remove-orphans --force-recreate
+
+            # 7. Cleanup obsolete dangling images
+            $DOCKER image prune -af --filter "until=48h" || true
+
+            # 8. Check status
+            echo "--- Active Container Status ---"
+            $COMPOSE ps
 
             echo "🚀 Deployment completed successfully on EC2!"
