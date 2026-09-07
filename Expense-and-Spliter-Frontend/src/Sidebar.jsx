@@ -16,9 +16,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+import { getStoredUser, getValidToken } from './utils/auth';
+
 const cn = (...inputs) => twMerge(clsx(inputs));
 
-const baseURL = process.env.REACT_APP_BASE_URL ||
+const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
     (window.location.hostname.includes('vercel.app')
         ? 'https://expense-and-spliter-backend.onrender.com/api'
         : 'http://localhost:5000/api');
@@ -26,51 +28,23 @@ const baseURL = process.env.REACT_APP_BASE_URL ||
 const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Automatically derive splitter mode from current route
     const isSplitterMode = location.pathname.startsWith('/splitter');
-    const isInsights = location.pathname.includes('/insights');
+    const isInsights = location.pathname === '/splitter/insights';
 
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-    // Profile state with localStorage + JWT decode fallback
-    const [user, setUser] = useState(() => {
-        try {
-            const saved = localStorage.getItem('user');
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                if (parsed.name === 'Operative') {
-                    parsed.name = parsed.username || '';
-                }
-                return parsed;
-            }
-        } catch (e) { }
-
-        const token = localStorage.getItem('token');
-        if (token && token.includes('.')) {
-            try {
-                const parts = token.split('.');
-                if (parts.length === 3) {
-                    const payload = JSON.parse(atob(parts[1]));
-                    const name = (payload.name && payload.name !== 'Operative') ? payload.name : (payload.username || 'User');
-                    return {
-                        name,
-                        username: payload.username || '',
-                        email: payload.email || ''
-                    };
-                }
-            } catch (e) { }
-        }
-        return null;
-    });
+    // Profile state with safe getStoredUser (handles localStorage & base64url JWT decode fallback)
+    const [user, setUser] = useState(() => getStoredUser());
 
     useEffect(() => {
         const fetchUserProfile = async () => {
-            const token = localStorage.getItem('token');
+            const token = getValidToken();
             if (!token) return;
             try {
-                const res = await axios.get(`${baseURL}/me`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await axios.get(`${baseURL}/me`);
                 if (res.data) {
                     const userData = res.data;
                     if (userData.name === 'Operative' || !userData.name) {
@@ -187,8 +161,8 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
                         >
                             {navItems.map((item) => {
                                 const isActive = isSplitterMode
-                                    ? (item.id === 'insights' ? isInsights : (item.id === 'splitter' && !isInsights))
-                                    : activeTab === item.id;
+                                    ? (item.id === 'insights' ? isInsights : (!isInsights && location.pathname.startsWith('/splitter')))
+                                    : (activeTab === item.id && location.pathname === '/');
                                 const colors = colorVariants[item.color] || colorVariants.indigo;
 
                                 return (
@@ -196,11 +170,11 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
                                         key={item.id}
                                         onClick={() => {
                                             if (item.path) navigate(item.path);
-                                            setActiveTab(item.id);
+                                            if (!isSplitterMode) setActiveTab(item.id);
                                             setIsMobileOpen(false);
                                         }}
                                         className={cn(
-                                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 relative focus:outline-none group",
+                                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 relative focus:outline-none group cursor-pointer",
                                             isActive ? colors.text : "text-slate-600 hover:text-slate-900"
                                         )}
                                     >
@@ -305,15 +279,17 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
                             onClick={() => {
                                 if (isSplitterMode) {
                                     navigate('/');
+                                    setActiveTab('dashboard');
                                 } else {
                                     navigate('/splitter');
                                 }
                             }}
+                            type="button"
                             className={cn(
-                                "relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1",
+                                "relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 cursor-pointer",
                                 isSplitterMode ? 'bg-indigo-600' : 'bg-slate-300'
                             )}
-                            title="Toggle Splitter Mode"
+                            title={isSplitterMode ? "Switch to Personal Expense Tracker" : "Switch to Smart Splitter"}
                         >
                             <span
                                 className={cn(

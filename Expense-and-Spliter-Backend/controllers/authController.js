@@ -39,9 +39,10 @@ const login = async (req, res) => {
         if (!match) return res.status(400).json({ error: 'Authentication failed' });
 
         const displayName = (user.name && user.name !== 'Operative') ? user.name : user.username;
+        const JWT_SECRET = process.env.JWT_SECRET || 'finpulse_jwt_secure_secret_key_2026';
         const token = jwt.sign(
             { userId: user._id, username: user.username, name: displayName, email: user.email },
-            process.env.JWT_SECRET,
+            JWT_SECRET,
             { expiresIn: '1d' }
         );
         res.json({

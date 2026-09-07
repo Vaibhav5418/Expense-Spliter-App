@@ -5,39 +5,15 @@ import Register from './Register';
 import SplitterLayout from './modules/splitter/SplitterLayout';
 import Sidebar from './Sidebar';
 import ExpenseList from './ExpenseList';
-
-const getValidToken = () => {
-  const token = localStorage.getItem('token');
-  if (!token || token === 'undefined' || token === 'null' || token.trim() === '') {
-    localStorage.removeItem('token');
-    return null;
-  }
-  const parts = token.split('.');
-  if (parts.length !== 3) {
-    localStorage.removeItem('token');
-    return null;
-  }
-  return token;
-};
+import { getValidToken, logoutUser } from './utils/auth';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!getValidToken());
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isSplitterMode, setIsSplitterMode] = useState(() => {
-    return localStorage.getItem('splitterMode') === 'true';
-  });
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logoutUser();
     setIsLoggedIn(false);
-    window.location.href = '/login';
-  };
-
-  const toggleSplitter = () => {
-    const newState = !isSplitterMode;
-    setIsSplitterMode(newState);
-    localStorage.setItem('splitterMode', newState);
   };
 
   return (
@@ -48,8 +24,6 @@ function App() {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             onLogout={handleLogout}
-            isSplitterMode={isSplitterMode}
-            onToggleSplitter={toggleSplitter}
           />
         )}
 

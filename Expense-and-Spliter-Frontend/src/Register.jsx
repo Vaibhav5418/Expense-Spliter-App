@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, Lock, ShieldCheck, CheckCircle, ArrowLeft } from 'lucide-react';
 
-const baseURL = process.env.REACT_APP_BASE_URL ||
+const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
   (window.location.hostname.includes('vercel.app')
     ? 'https://expense-and-spliter-backend.onrender.com/api'
     : 'http://localhost:5000/api');

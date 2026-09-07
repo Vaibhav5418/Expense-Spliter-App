@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Send, X } from 'lucide-react';
 import axios from 'axios';
+import { getValidToken } from '../../utils/auth';
 
-const baseURL = process.env.REACT_APP_BASE_URL ||
+const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
     (window.location.hostname.includes('vercel.app')
         ? 'https://expense-and-spliter-backend.onrender.com/api'
         : 'http://localhost:5000/api');
@@ -16,10 +17,9 @@ const InviteMemberModal = ({ groupId, onClose, onInviteSuccess }) => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(`${baseURL}/splitter/groups/${groupId}/invite`, { email }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const token = getValidToken();
+            if (!token) return;
+            await axios.post(`${baseURL}/splitter/groups/${groupId}/invite`, { email });
             onInviteSuccess(email);
             setEmail('');
         } catch (err) {

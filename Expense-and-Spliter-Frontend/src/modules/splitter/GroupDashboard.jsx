@@ -9,8 +9,9 @@ import BalanceGrid from './BalanceGrid';
 import ExpenseDetailModal from './ExpenseDetailModal';
 import EditExpenseModal from './EditExpenseModal';
 import SettlementConfirmationModal from './SettlementConfirmationModal';
+import { getStoredUser, getValidToken } from '../../utils/auth';
 
-const baseURL = process.env.REACT_APP_BASE_URL ||
+const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
     (window.location.hostname.includes('vercel.app')
         ? 'https://expense-and-spliter-backend.onrender.com/api'
         : 'http://localhost:5000/api');
@@ -18,33 +19,23 @@ const baseURL = process.env.REACT_APP_BASE_URL ||
 const GroupDashboard = ({ groupId, onBack }) => {
     const [groupData, setGroupData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [showInviteModal, setShowInviteModal] = useState(false);
-    const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [isInviteOpen, setIsInviteOpen] = useState(false);
+    const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
     const [selectedExpense, setSelectedExpense] = useState(null);
-    const [currentUserId, setCurrentUserId] = useState(null);
+    const [currentUserId, setCurrentUserId] = useState(() => {
+        const user = getStoredUser();
+        return user ? (user._id || user.userId) : null;
+    });
 
     // New State for Edit/Settle
     const [editingExpense, setEditingExpense] = useState(null);
     const [settlementDebt, setSettlementDebt] = useState(null);
 
-    // Get User ID from token (simple decode)
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token && token.includes('.')) {
-            try {
-                const parts = token.split('.');
-                if (parts.length === 3) {
-                    const payload = JSON.parse(atob(parts[1]));
-                    setCurrentUserId(payload.userId);
-                }
-            } catch (e) { console.error('Token decode failed'); }
-        }
-    }, []);
-
     const fetchDetails = useCallback(async (silent = false) => {
         if (!silent) setIsLoading(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = getValidToken();
+            if (!token) return;
             const res = await axios.get(`${baseURL}/splitter/groups/${groupId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });

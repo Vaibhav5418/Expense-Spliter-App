@@ -1,6 +1,6 @@
+require('dotenv').config();
 const app = require('./app.js');
 const connectDB = require('./config/db');
-require('dotenv').config();
 const initRecurringJobs = require('./jobs/recurringJobs');
 
 // Connect to Database

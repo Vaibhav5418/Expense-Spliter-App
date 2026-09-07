@@ -1,10 +1,10 @@
-
 // src/ExpenseForm.js
 import React, { useState } from 'react';
 import axios from 'axios';
+import { getValidToken } from './utils/auth';
 
 // Load the base URL from .env or detect cloud environment
-const baseURL = process.env.REACT_APP_BASE_URL ||
+const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
   (window.location.hostname.includes('vercel.app')
     ? 'https://expense-and-spliter-backend.onrender.com/api'
     : 'http://localhost:5000/api');
@@ -27,7 +27,7 @@ const ExpenseForm = ({ onAdd }) => {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getValidToken();
 
       const response = await axios.post(
         `${baseURL}/expenses`,

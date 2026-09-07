@@ -6,7 +6,9 @@ import GroupList from './GroupList';
 import GroupDashboard from './GroupDashboard';
 import SplitterAnalytics from './SplitterAnalytics';
 
-const baseURL = process.env.REACT_APP_BASE_URL ||
+import { getValidToken } from '../../utils/auth';
+
+const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
     (window.location.hostname.includes('vercel.app')
         ? 'https://expense-and-spliter-backend.onrender.com/api'
         : 'http://localhost:5000/api');
@@ -21,10 +23,9 @@ const SplitterLayout = ({ isInsights }) => {
     const fetchGroups = async (silent = false) => {
         if (!silent) setIsLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${baseURL}/splitter/groups`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const token = getValidToken();
+            if (!token) return;
+            const res = await axios.get(`${baseURL}/splitter/groups`);
             setGroups(res.data);
         } catch (err) {
             console.error('Failed to fetch groups', err);

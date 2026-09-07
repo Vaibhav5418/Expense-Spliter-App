@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { getValidToken } from '../../../utils/auth';
 
-const baseURL = process.env.REACT_APP_BASE_URL ||
+const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
     (window.location.hostname.includes('vercel.app')
         ? 'https://expense-and-spliter-backend.onrender.com/api'
         : 'http://localhost:5000/api');
@@ -11,8 +12,8 @@ const baseURL = process.env.REACT_APP_BASE_URL ||
  */
 class SplitterAnalyticsService {
     async fetchMasterData() {
-        const token = localStorage.getItem('token');
-        const headers = { Authorization: `Bearer ${token}` };
+        const token = getValidToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         // 1. Get all groups
         const groupsRes = await axios.get(`${baseURL}/splitter/groups`, { headers });

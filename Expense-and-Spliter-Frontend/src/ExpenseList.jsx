@@ -16,11 +16,12 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getValidToken, logoutUser } from './utils/auth';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler);
 
 const cn = (...inputs) => twMerge(clsx(inputs));
-const baseURL = process.env.REACT_APP_BASE_URL ||
+const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
   (window.location.hostname.includes('vercel.app')
     ? 'https://expense-and-spliter-backend.onrender.com/api'
     : 'http://localhost:5000/api');
@@ -79,7 +80,8 @@ const ExpenseFormComponent = ({ onAdd, categories, onAddCategory, onClose, notif
     if (formData.title && !formData.category && !isClassifying) {
       setIsClassifying(true);
       try {
-        const token = localStorage.getItem('token');
+        const token = getValidToken();
+        if (!token) return;
         const res = await fetch(`${baseURL}/predict`, {
           method: 'POST',
           headers: {
@@ -271,16 +273,17 @@ const ExpenseList = ({ activeTab }) => {
     setTimeout(() => setError(null), 5000);
   }, []);
 
-  const token = localStorage.getItem('token');
+  const token = getValidToken();
 
   const fetchCategories = useCallback(async () => {
+    const activeToken = getValidToken();
+    if (!activeToken) return;
     try {
       const res = await fetch(`${baseURL}/categories`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${activeToken}` }
       });
       if (res.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        logoutUser();
         return;
       }
       if (res.ok) {
@@ -289,16 +292,17 @@ const ExpenseList = ({ activeTab }) => {
         setCategories(['Food', 'Travel', 'Shopping', 'Bills', 'Entertainment', 'Others', ...new Set(customNames)]);
       }
     } catch { }
-  }, [token]);
+  }, []);
 
   const fetchInsights = useCallback(async () => {
+    const activeToken = getValidToken();
+    if (!activeToken) return;
     try {
       const res = await fetch(`${baseURL}/insights`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${activeToken}` }
       });
       if (res.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        logoutUser();
         return;
       }
       if (res.ok) {
@@ -306,19 +310,20 @@ const ExpenseList = ({ activeTab }) => {
         setInsights(data);
       }
     } catch { }
-  }, [token]);
+  }, []);
 
   const fetchExpenses = useCallback(async () => {
+    const activeToken = getValidToken();
+    if (!activeToken) return;
     setIsLoading(true);
     try {
       const res = await fetch(`${baseURL}/expenses`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${activeToken}`
         }
       });
       if (res.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        logoutUser();
         return;
       }
       if (!res.ok) throw new Error('Failed to synchronize ledger');

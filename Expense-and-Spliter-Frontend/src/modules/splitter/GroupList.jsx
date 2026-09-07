@@ -4,7 +4,9 @@ import { Plus, Users, ArrowRight, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import DeleteGroupModal from './DeleteGroupModal';
 
-const baseURL = process.env.REACT_APP_BASE_URL ||
+import { getValidToken } from '../../utils/auth';
+
+const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
     (window.location.hostname.includes('vercel.app')
         ? 'https://expense-and-spliter-backend.onrender.com/api'
         : 'http://localhost:5000/api');
@@ -18,12 +20,11 @@ const GroupList = ({ groups, onSelect, onRefresh }) => {
     const handleCreateGroup = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
+            const token = getValidToken();
+            if (!token) return;
             await axios.post(`${baseURL}/splitter/groups`, {
                 name: newGroupName,
                 description
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
             setNewGroupName('');
             setDescription('');
@@ -37,10 +38,9 @@ const GroupList = ({ groups, onSelect, onRefresh }) => {
     const handleDeleteGroup = async () => {
         if (!groupToDelete) return;
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`${baseURL}/splitter/groups/${groupToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const token = getValidToken();
+            if (!token) return;
+            await axios.delete(`${baseURL}/splitter/groups/${groupToDelete.id}`);
             setGroupToDelete(null);
             onRefresh();
         } catch (err) {
