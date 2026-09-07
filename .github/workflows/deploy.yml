@@ -72,47 +72,45 @@ jobs:
             mkdir -p ~/app
             cd ~/app
 
-            # 2. Write docker-compose.yml cleanly (guaranteed valid YAML indentation)
-            printf "%s\n" \
-              "services:" \
-              "  backend:" \
-              "    image: ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-backend:latest" \
-              "    container_name: expense-splitter-backend" \
-              "    restart: always" \
-              "    ports:" \
-              '      - "5000:5000"' \
-              "    environment:" \
-              "      - PORT=5000" \
-              "      - MONGO_URI=${MONGO_URI}" \
-              "      - JWT_SECRET=${JWT_SECRET}" \
-              "      - GROQ_API_KEY=${GROQ_API_KEY}" \
-              "      - FRONTEND_URL=${FRONTEND_URL}" \
-              "    networks:" \
-              "      - app-network" \
-              "" \
-              "  frontend:" \
-              "    image: ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-frontend:latest" \
-              "    container_name: expense-splitter-frontend" \
-              "    restart: always" \
-              "    ports:" \
-              '      - "80:80"' \
-              "    depends_on:" \
-              "      - backend" \
-              "    networks:" \
-              "      - app-network" \
-              "" \
-              "networks:" \
-              "  app-network:" \
-              "    driver: bridge" > docker-compose.yml
+            # 2. Write .env file first
+            cat << 'EOF' > .env
+DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+MONGO_URI=${{ secrets.MONGO_URI }}
+JWT_SECRET=${{ secrets.JWT_SECRET }}
+GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+FRONTEND_URL=http://${{ secrets.EC2_HOST }}
+PORT=5000
+EOF
 
-            # 3. Write .env file
-            printf "%s\n" \
-              "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" \
-              "MONGO_URI=${{ secrets.MONGO_URI }}" \
-              "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
-              "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" \
-              "FRONTEND_URL=http://${{ secrets.EC2_HOST }}" \
-              "PORT=5000" > .env
+            # 3. Write docker-compose.yml cleanly using env_file
+            cat << 'EOF' > docker-compose.yml
+services:
+  backend:
+    image: ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-backend:latest
+    container_name: expense-splitter-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  frontend:
+    image: ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-frontend:latest
+    container_name: expense-splitter-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+EOF
 
             # 4. Auto-detect Docker and Docker Compose (support sudo / standalone)
             if docker ps >/dev/null 2>&1; then
