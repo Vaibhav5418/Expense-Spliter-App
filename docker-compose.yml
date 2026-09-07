@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ${DOCKERHUB_USERNAME}/expense-splitter-backend:latest
+    build:
+      context: ./Expense-and-Spliter-Backend
+      dockerfile: Dockerfile
+    container_name: expense-splitter-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+    networks:
+      - app-network
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/expense-splitter-frontend:latest
+    build:
+      context: ./Expense-and-Spliter-Frontend
+      dockerfile: Dockerfile
+    container_name: expense-splitter-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

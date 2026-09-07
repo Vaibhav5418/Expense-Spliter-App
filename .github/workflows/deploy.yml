@@ -1,0 +1,103 @@
+name: Build, Push to Docker Hub & Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  # =========================================================================
+  # 1. Build and Push Docker Images to Docker Hub
+  # =========================================================================
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Expense-and-Spliter-Backend
+          file: ./Expense-and-Spliter-Backend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-backend:${{ github.sha }}
+
+      - name: Build & Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Expense-and-Spliter-Frontend
+          file: ./Expense-and-Spliter-Frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-frontend:${{ github.sha }}
+
+  # =========================================================================
+  # 2. Automated Deployment to AWS EC2 Instance via SSH
+  # =========================================================================
+  deploy:
+    name: Deploy to AWS EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code (for compose file)
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose.yml to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "/home/${{ secrets.EC2_USER }}/app"
+
+      - name: Deploy Containers on EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Navigate to deployment directory
+            mkdir -p /home/${{ secrets.EC2_USER }}/app
+            cd /home/${{ secrets.EC2_USER }}/app
+
+            # Write Environment Variables for Compose
+            cat << 'EOF' > .env
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+            FRONTEND_URL=http://${{ secrets.EC2_HOST }}
+            PORT=5000
+            EOF
+
+            # Log into Docker Hub on EC2
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            # Pull latest images and restart containers
+            docker compose pull
+            docker compose up -d --remove-orphans --force-recreate
+
+            # Prune obsolete images to conserve EC2 disk space
+            docker image prune -af --filter "until=48h"
+
+            echo "🚀 Deployment completed successfully!"
