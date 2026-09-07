@@ -57,31 +57,57 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Source Code (for compose file)
-        uses: actions/checkout@v4
-
-      - name: Copy docker-compose.yml to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml"
-          target: "/home/${{ secrets.EC2_USER }}/app"
-
       - name: Deploy Containers on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script_stop: true
           script: |
-            # Navigate to deployment directory
-            mkdir -p /home/${{ secrets.EC2_USER }}/app
-            cd /home/${{ secrets.EC2_USER }}/app
+            # 1. Ensure deployment directory exists
+            mkdir -p ~/app
+            cd ~/app
 
-            # Write Environment Variables for Compose
-            cat << 'EOF' > .env
+            # 2. Write docker-compose.yml directly
+            cat << 'EOF' > docker-compose.yml
+            version: '3.8'
+
+            services:
+              backend:
+                image: ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-backend:latest
+                container_name: expense-splitter-backend
+                restart: always
+                ports:
+                  - "5000:5000"
+                environment:
+                  - PORT=5000
+                  - MONGO_URI=${MONGO_URI}
+                  - JWT_SECRET=${JWT_SECRET}
+                  - GROQ_API_KEY=${GROQ_API_KEY}
+                  - FRONTEND_URL=${FRONTEND_URL}
+                networks:
+                  - app-network
+
+              frontend:
+                image: ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter-frontend:latest
+                container_name: expense-splitter-frontend
+                restart: always
+                ports:
+                  - "80:80"
+                depends_on:
+                  - backend
+                networks:
+                  - app-network
+
+            networks:
+              app-network:
+                driver: bridge
+            EOF
+
+            # 3. Write .env file
+            cat << EOF > .env
             DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
             MONGO_URI=${{ secrets.MONGO_URI }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
@@ -90,14 +116,14 @@ jobs:
             PORT=5000
             EOF
 
-            # Log into Docker Hub on EC2
+            # 4. Authenticate Docker with Docker Hub on EC2
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-            # Pull latest images and restart containers
+            # 5. Pull updated images & restart containers
             docker compose pull
             docker compose up -d --remove-orphans --force-recreate
 
-            # Prune obsolete images to conserve EC2 disk space
+            # 6. Cleanup obsolete dangling images
             docker image prune -af --filter "until=48h"
 
-            echo "🚀 Deployment completed successfully!"
+            echo "🚀 Deployment completed successfully on EC2!"
