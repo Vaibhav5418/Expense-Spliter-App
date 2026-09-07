@@ -21,10 +21,7 @@ import { getValidToken, logoutUser } from './utils/auth';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler);
 
 const cn = (...inputs) => twMerge(clsx(inputs));
-const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
-  (window.location.hostname.includes('vercel.app')
-    ? 'https://expense-and-spliter-backend.onrender.com/api'
-    : 'http://localhost:5000/api');
+import { API_BASE_URL as baseURL } from './config';
 
 const ExpenseFormComponent = ({ onAdd, categories, onAddCategory, onClose, notify }) => {
   const [formData, setFormData] = useState({

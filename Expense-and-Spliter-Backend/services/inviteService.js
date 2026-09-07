@@ -32,7 +32,8 @@ const sendInvitation = async (email, groupName, senderName, groupId, invitedBy) 
     });
     await invite.save();
 
-    const inviteLink = `http://localhost:3000/accept-invite?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const inviteLink = `${frontendUrl}/accept-invite?token=${token}`;
 
     const mailOptions = {
         from: '"FinPulse Splitter" <no-reply@finpulse.com>',

@@ -11,10 +11,7 @@ import EditExpenseModal from './EditExpenseModal';
 import SettlementConfirmationModal from './SettlementConfirmationModal';
 import { getStoredUser, getValidToken } from '../../utils/auth';
 
-const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
-    (window.location.hostname.includes('vercel.app')
-        ? 'https://expense-and-spliter-backend.onrender.com/api'
-        : 'http://localhost:5000/api');
+import { API_BASE_URL as baseURL } from '../../config';
 
 const GroupDashboard = ({ groupId, onBack }) => {
     const [groupData, setGroupData] = useState(null);

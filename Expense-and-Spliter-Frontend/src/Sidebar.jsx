@@ -20,10 +20,7 @@ import { getStoredUser, getValidToken } from './utils/auth';
 
 const cn = (...inputs) => twMerge(clsx(inputs));
 
-const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
-    (window.location.hostname.includes('vercel.app')
-        ? 'https://expense-and-spliter-backend.onrender.com/api'
-        : 'http://localhost:5000/api');
+import { API_BASE_URL as baseURL } from './config';
 
 const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
     const navigate = useNavigate();

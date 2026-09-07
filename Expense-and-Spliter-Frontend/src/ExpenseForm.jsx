@@ -3,11 +3,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { getValidToken } from './utils/auth';
 
-// Load the base URL from .env or detect cloud environment
-const baseURL = (import.meta.env?.VITE_BASE_URL || process.env.REACT_APP_BASE_URL) ||
-  (window.location.hostname.includes('vercel.app')
-    ? 'https://expense-and-spliter-backend.onrender.com/api'
-    : 'http://localhost:5000/api');
+import { API_BASE_URL as baseURL } from './config';
 
 const ExpenseForm = ({ onAdd }) => {
   const [title, setTitle] = useState('');
