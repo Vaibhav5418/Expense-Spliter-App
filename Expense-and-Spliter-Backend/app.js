@@ -6,8 +6,8 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-const customOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) 
+const customOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
     : [];
 
 const allowedOrigins = [
@@ -15,7 +15,8 @@ const allowedOrigins = [
     ...customOrigins,
     'https://expense-and-spliter-frontend.vercel.app',
     'https://expense-and-spliter-git-da1e9e-vaibhav-sonis-projects-830e28a2.vercel.app',
-    'https://expense-and-spliter-frontend-o8nbjp5oy.vercel.app'
+    'https://expense-and-spliter-frontend-o8nbjp5oy.vercel.app',
+    'http://expense-spliter.duckdns.org'
 ].filter(Boolean);
 
 app.use(cors({
